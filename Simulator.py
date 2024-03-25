@@ -21,7 +21,7 @@ flow['soft'] = fuzz.trapmf(flow.universe, [-1, -1, -0.8, 0])
 flow['good'] = fuzz.trimf(flow.universe, [-0.4, 0, 0.4])
 flow['hard'] = fuzz.trapmf(flow.universe, [0, 0.8, 1, 1])
 
-# Define membership functions for output variable 'cold'
+
 # Define membership functions for output variable 'cold'
 cold['openFast'] = fuzz.trimf(hot.universe, [0.3, 0.6, 1])
 cold['openSlow'] = fuzz.trimf(cold.universe, [0, 0.3, 0.6])
