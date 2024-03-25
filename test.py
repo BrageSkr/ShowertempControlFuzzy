@@ -51,7 +51,7 @@ shower_ctrl = ctrl.ControlSystem([rule1, rule2, rule3, rule4, rule5, rule6, rule
 shower_simulation = ctrl.ControlSystemSimulation(shower_ctrl)
 
 # Input values
-input_temp = 10
+input_temp = 15
 input_flow = 0.5
 
 # Compute result

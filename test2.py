@@ -46,49 +46,60 @@ rule7 = ctrl.Rule(temperature['hot'] & flow['soft'], (cold['openFast'], hot['ope
 rule8 = ctrl.Rule(temperature['hot'] & flow['good'], (cold['openSlow'], hot['closeSlow']))
 rule9 = ctrl.Rule(temperature['hot'] & flow['hard'], (cold['closeSlow'], hot['closeFast']))
 
-# Create control system
+
+# Simulation parameters
 shower_ctrl = ctrl.ControlSystem([rule1, rule2, rule3, rule4, rule5, rule6, rule7, rule8, rule9])
 shower_simulation = ctrl.ControlSystemSimulation(shower_ctrl)
 
 # Simulation parameters
 num_steps = 50
-temp_setpoints = [15,15,15,15,30,30,30,30, 30]  # Periodic changes in temperature setpoint
-flow_setpoints = [0.5, 0.5, 0.5, 0.5, 1, 1, 1, 1, 1]  # Periodic changes in flow setpoint
+temp_setpoints = [15, 15, 15, 15, 30, 30, 30, 30, 30]  # Periodic changes in temperature setpoint
+flow_setpoints = [0.5, 0.5, 0.5, 0.5, 1, 1, 1, 1, 1]
+# Periodic changes in flow setpoint
 
 # Lists to store simulation data
+# Lists to store simulation data
 time_steps = []
-temp_adjustments = []
-flow_adjustments = []
+temp_actual = [15]  # Initial condition for temperature
+flow_actual = [0.5]  # Initial condition for flow
 
-# Simulate periodic changes in setpoints
-for i in range(num_steps):
-    step = i % len(temp_setpoints)
+# Simulate the control system
+for i in range(1, num_steps):  # Start from the second time step
+    step = i % len(temp_setpoints)  # Get the current setpoints
     temp_setpoint = temp_setpoints[step]
     flow_setpoint = flow_setpoints[step]
 
-    shower_simulation.input['temperature'] = temp_setpoint
-    shower_simulation.input['flow'] = flow_setpoint
+    # Calculate the error between setpoint and actual value
+    temp_error = temp_setpoint - temp_actual[i - 1]  # Error for temperature
+    flow_error = flow_setpoint - flow_actual[i - 1]  # Error for flow
+
+    # Input the errors to the fuzzy control system
+    shower_simulation.input['temperature'] = temp_error
+    shower_simulation.input['flow'] = flow_error
     shower_simulation.compute()
 
-    temp_adjustment = shower_simulation.output['cold']
+    # Get the control actions
+    temp_adjustment = (shower_simulation.output['cold'] - shower_simulation.output['hot']) * 30
     flow_adjustment = shower_simulation.output['hot']
 
-    time_steps.append(i)
-    temp_adjustments.append(temp_adjustment)
-    flow_adjustments.append(flow_adjustment)
+    # Update the actual values based on the control actions
+    temp_actual.append(temp_actual[i - 1] + temp_adjustment)
+    flow_actual.append(max(min(flow_actual[i - 1] + flow_adjustment, 1.0), 0.0))
 
-# Plot adjustments
-# First figure with Temperature Adjustments and Temperature Setpoints
+    # Store the time step
+    time_steps.append(i)
+
+# Plot the results
 plt.figure(figsize=(12, 6))
 plt.subplot(2, 1, 1)
-plt.plot(time_steps, temp_adjustments, label='Temperature Adjustments')
-plt.title('Temperature Adjustments')
+plt.plot( temp_actual, label='Temperature Adjustments')
+plt.title('Temperature actual')
 plt.xlabel('Time Step')
 plt.ylabel('Value')
 plt.legend()
 
 plt.subplot(2, 1, 2)
-plt.plot(time_steps, [temp_setpoints[i % len(temp_setpoints)] for i in range(num_steps)], label='Temperature Setpoints')
+plt.plot( [temp_setpoints[i % len(temp_setpoints)] for i in range(num_steps)], label='Temperature Setpoints')
 plt.title('Temperature Setpoints')
 plt.xlabel('Time Step')
 plt.ylabel('Value')
@@ -100,14 +111,14 @@ plt.show()
 # Second figure with Flow Adjustments and Flow Setpoints
 plt.figure(figsize=(12, 6))
 plt.subplot(2, 1, 1)
-plt.plot(time_steps, flow_adjustments, label='Flow Adjustments')
-plt.title('Flow Adjustments')
+plt.plot( flow_actual, label='Flow Adjustments')
+plt.title('Flow actual')
 plt.xlabel('Time Step')
 plt.ylabel('Value')
 plt.legend()
 
 plt.subplot(2, 1, 2)
-plt.plot(time_steps, [flow_setpoints[i % len(flow_setpoints)] for i in range(num_steps)], label='Flow Setpoints')
+plt.plot( [flow_setpoints[i % len(flow_setpoints)] for i in range(num_steps)], label='Flow Setpoints')
 plt.title('Flow Setpoints')
 plt.xlabel('Time Step')
 plt.ylabel('Value')
